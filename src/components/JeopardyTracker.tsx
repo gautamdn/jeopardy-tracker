@@ -16,31 +16,38 @@ const getStudyMaterial = async (answer: string) => {
     throw new Error("OpenAI API key is not set");
   }
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model: "gpt-3.5-turbo",
-      messages: [{
-        role: "system",
-        content: "You are a helpful assistant that provides study material for Jeopardy answers."
-      }, {
-        role: "user",
-        content: `Provide study material for the Jeopardy answer: "${answer}". Include: 1) Key Points, 2) Related Topics, 3) Common Misconceptions, 4) Fun Fact, and 5) Study Tips.`
-      }],
-      max_tokens: 500
-    })
-  });
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: "gpt-3.5-turbo",
+        messages: [{
+          role: "system",
+          content: "You are a helpful assistant that provides study material for Jeopardy answers."
+        }, {
+          role: "user",
+          content: `Provide study material for the Jeopardy answer: "${answer}". Include: 1) Key Points, 2) Related Topics, 3) Common Misconceptions, 4) Fun Fact, and 5) Study Tips.`
+        }],
+        max_tokens: 500
+      })
+    });
 
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("API Error:", errorData);
+      throw new Error(`HTTP error! status: ${response.status}, message: ${JSON.stringify(errorData)}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  } catch (error) {
+    console.error("Error in getStudyMaterial:", error);
+    throw error;
   }
-
-  const data = await response.json();
-  return data.choices[0].message.content;
 };
 
 interface Answer {
